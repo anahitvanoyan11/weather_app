@@ -17,6 +17,7 @@ class CountryController {
       const countries = await CountryService.getAllCountries();
       res.json(countries);
     } catch (error) {
+      console.log('Error getting all countries', error);
       res.status(500).json({ error: error.message });
     }
   }

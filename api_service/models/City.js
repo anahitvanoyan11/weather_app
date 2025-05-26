@@ -1,10 +1,10 @@
 import db from '../config/database.js';
 
 class City {
-  static async create({ name, countryId, latitude, longitude }) {
+  static async create({ name, countryId }) {
     const [result] = await db.execute(
-      'INSERT INTO cities (name, country_id, latitude, longitude) VALUES (?, ?, ?, ?)',
-      [name, countryId, latitude, longitude]
+      'INSERT INTO cities (name, country_id) VALUES (?, ?)',
+      [name, countryId]
     );
     return result.insertId;
   }
@@ -43,6 +43,19 @@ class City {
       JOIN countries co ON c.country_id = co.id 
       WHERE c.country_id = ?
     `, [countryId]);
+    return rows;
+  }
+
+  static async getWeatherHistory(cityId) {
+    //we need to add limit 10 to the query
+    const [rows] = await db.execute(`
+      SELECT w.*, c.name as city_name, co.name as country_name, co.code as country_code 
+      FROM weather_history w 
+      JOIN cities c ON w.city_id = c.id 
+      JOIN countries co ON c.country_id = co.id 
+      WHERE w.city_id = ?
+      ORDER BY w.recorded_at DESC
+    `, [cityId]); 
     return rows;
   }
 }

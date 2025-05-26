@@ -2,6 +2,7 @@ import db from '../config/database.js';
 
 class Country {
   static async create({ name, code }) {
+    console.log('Creating country', name, code);
     const [result] = await db.execute(
       'INSERT INTO countries (name, code) VALUES (?, ?)',
       [name, code]

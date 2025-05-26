@@ -1,6 +1,5 @@
 import City from '../models/City.js';
 import Country from '../models/Country.js';
-import db from '../db/connection.js';
 
 class CityService {
   static async createCity(cityData) {
@@ -36,6 +35,10 @@ class CityService {
       throw new Error('Country not found');
     }
     return await City.findByCountry(countryId);
+  }
+
+  static async getWeatherHistory(cityId) {
+    return await City.getWeatherHistory(cityId);
   }
 }
 

@@ -15,7 +15,7 @@ class Weather {
       FROM weather_history w 
       JOIN cities c ON w.city_id = c.id 
       WHERE w.city_id = ? 
-      ORDER BY w.created_at DESC
+      ORDER BY w.recorded_at DESC
     `, [cityId]);
     return rows;
   }
