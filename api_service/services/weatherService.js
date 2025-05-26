@@ -17,27 +17,42 @@ class WeatherService {
     return await Weather.create(weatherData);
   }
 
-  static async getWeatherHistory(cityId) {
+  static async getWeatherHistoryRow(query) {
     // Verify city exists
-    const city = await City.findById(cityId);
+    const cityName = query.city ? query.city : 'Yerevan';
+    const city = await City.findByName(cityName);
+
     if (!city) {
       throw new Error('City not found');
     }
-    return await Weather.findByCity(cityId);
+
+    const now = new Date();
+    const toDate = query.to ? query.to : now;
+    const fromDate = query.from 
+      ? new Date(query.from) 
+      : new Date(now.getTime() - 30 * 60 * 1000); // 30 minutes earlier
+
+    return await Weather.findByCity(city.id, fromDate, toDate);
   }
 
-  static async getCurrentWeather(cityId) {
+  static async getWeatherHistoryAverage(query) {
     // Verify city exists
-    const city = await City.findById(cityId);
+    const cityName = query.city ? query.city : 'Yerevan';
+    const city = await City.findByName(cityName);
+
     if (!city) {
       throw new Error('City not found');
     }
-    const weather = await Weather.getCurrentWeather(cityId);
-    if (!weather) {
-      throw new Error('No weather data available for this city');
-    }
-    return weather;
+
+    const now = new Date();
+    const toDate = query.to ? query.to : now;
+    const fromDate = query.from 
+      ? new Date(query.from) 
+      : new Date(now.getTime() - 30 * 60 * 1000); // 30 minutes earlier
+
+    return await Weather.findAverage(city.id, fromDate, toDate);
   }
+
 }
 
 export default WeatherService; 

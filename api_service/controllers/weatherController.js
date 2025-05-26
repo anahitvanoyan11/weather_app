@@ -1,18 +1,18 @@
 import WeatherService from '../services/weatherService.js';
 
 class WeatherController {
-  static async getWeatherHistory(req, res) {
+  static async getWeatherHistoryRow(req, res) {
     try {
-      const weather = await WeatherService.getWeatherHistory(req.params.cityId);
+      const weather = await WeatherService.getWeatherHistoryRow(req.query);
       res.json(weather);
     } catch (error) {
       res.status(404).json({ error: error.message });
     }
   }
 
-  static async getCurrentWeather(req, res) {
+  static async getWeatherHistoryAverage(req, res) {
     try {
-      const weather = await WeatherService.getCurrentWeather(req.params.cityId);
+      const weather = await WeatherService.getWeatherHistoryAverage(req.query);
       res.json(weather);
     } catch (error) {
       res.status(404).json({ error: error.message });

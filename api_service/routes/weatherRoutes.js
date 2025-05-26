@@ -3,7 +3,7 @@ import WeatherController from '../controllers/weatherController.js';
 
 const router = express.Router();
 
-router.get('/city/:cityId/history', WeatherController.getWeatherHistory);
-router.get('/city/:cityId/current', WeatherController.getCurrentWeather);
+router.get('/row', WeatherController.getWeatherHistoryRow);
+router.get('/average', WeatherController.getWeatherHistoryAverage);
 
 export default router; 
