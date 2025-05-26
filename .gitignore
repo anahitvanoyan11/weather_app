@@ -30,4 +30,13 @@ yarn-error.log*
 pids
 *.pid
 *.seed
-*.pid.lock 
+*.pid.lock
+
+# Redis
+dump.rdb
+*.rdb
+redis-data/
+
+# Redis
+dump.rdb
+*.rdb 
