@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import { Queue } from 'bullmq';
 import countryRoutes from './routes/countryRoutes.js';
 import cityRoutes from './routes/cityRoutes.js';
 import weatherRoutes from './routes/weatherRoutes.js';
@@ -12,8 +13,21 @@ console.log('Environment Variables:', {
   MYSQL_PORT: process.env.MYSQL_PORT,
   MYSQL_DATABASE: process.env.MYSQL_DATABASE,
   MYSQL_USER: process.env.MYSQL_USER,
-  MYSQL_PASSWORD: process.env.MYSQL_PASSWORD ? '****' : undefined
+  MYSQL_PASSWORD: process.env.MYSQL_PASSWORD ? '****' : undefined,
+  REDIS_HOST: process.env.REDIS_HOST,
+  REDIS_PORT: process.env.REDIS_PORT
 });
+
+// Initialize Redis queue
+const weatherQueue = new Queue('weather-queue', {
+  connection: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: process.env.REDIS_PORT || 6379
+  }
+});
+
+// Make queue available globally
+global.weatherQueue = weatherQueue;
 
 const app = express();
 

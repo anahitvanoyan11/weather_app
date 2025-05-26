@@ -6,21 +6,46 @@ const worker = new Worker('weather-queue', async (job) => {
   console.log('Processing job:', job.id);
   const { cityId } = job.data;
 
-  const [rows] = await db.execute('SELECT name, country FROM cities WHERE id = ?', [cityId]);
-  if (!rows.length) return;
+  // Get city with its coordinates
+  const [rows] = await db.execute(`
+    SELECT c.*, co.name as country_name 
+    FROM cities c 
+    JOIN countries co ON c.country_id = co.id 
+    WHERE c.id = ?
+  `, [cityId]);
+  
+  if (!rows.length) {
+    console.error(`City with id ${cityId} not found`);
+    return;
+  }
 
   const city = rows[0];
+  if (!city.latitude || !city.longitude) {
+    console.error(`City ${city.name} is missing coordinates`);
+    return;
+  }
 
-  const weatherRes = await axios.get(`https://api.open-meteo.com/v1/forecast?latitude=40.18&longitude=44.52&current_weather=true`);
-  const { temperature, weathercode } = weatherRes.data.current_weather;
+  try {
+    const weatherRes = await axios.get(
+      `https://api.open-meteo.com/v1/forecast?latitude=${city.latitude}&longitude=${city.longitude}&current_weather=true`
+    );
 
-  const [result] = await db.execute(
-    `INSERT INTO weather_history (city_id, temperature, condition) VALUES (?, ?, ?)`,
-    [cityId, temperature, weathercode.toString()]
-  );
+    console.log(`Weather data for ${city.name}:`, weatherRes.data);
+    const { temperature, weathercode, windspeed } = weatherRes.data.current_weather;
 
-  const weatherId = result.insertId;
-  await db.execute(`UPDATE cities SET current_weather_id = ? WHERE id = ?`, [weatherId, cityId]);
+    const [result] = await db.execute(
+      `INSERT INTO weather_history (city_id, temperature, wind_speed, condition) VALUES (?, ?, ?, ?)`,
+      [cityId, temperature, windspeed, weathercode.toString()]
+    );
+
+    const weatherId = result.insertId;
+    await db.execute(`UPDATE cities SET current_weather_id = ? WHERE id = ?`, [weatherId, cityId]);
+    
+    console.log(`Updated weather for ${city.name} (${city.country_name})`);
+  } catch (error) {
+    console.error(`Error fetching weather for ${city.name}:`, error.message);
+    throw error;
+  }
 }, {
   connection: {
     host: process.env.REDIS_HOST || 'localhost',
