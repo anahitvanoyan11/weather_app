@@ -1,9 +1,10 @@
 import City from '../models/City.js';
 import Country from '../models/Country.js';
+import db from '../db/connection.js';
 
 class CityService {
   static async createCity(cityData) {
-    const existingCity = await this.findByNameAndCountry(cityData.name, cityData.countryId);
+    const existingCity = await City.findByNameAndCountry(cityData.name, cityData.countryId);
     if (existingCity) {
       throw new Error('City already exists in this country');
     }
@@ -35,30 +36,6 @@ class CityService {
       throw new Error('Country not found');
     }
     return await City.findByCountry(countryId);
-  }
-
-  static async findByNameOrCode(name, code) {
-    const [rows] = await db.execute(
-      'SELECT * FROM countries WHERE name = ? OR code = ?',
-      [name, code]
-    );
-    return rows[0];
-  }
-
-  static async createCountry(countryData) {
-    const existingCountry = await this.findByNameOrCode(countryData.name, countryData.code);
-    if (existingCountry) {
-      throw new Error('Country already exists');
-    }
-    return await Country.create(countryData);
-  }
-
-  static async findByNameAndCountry(name, countryId) {
-    const [rows] = await db.execute(
-      'SELECT * FROM cities WHERE name = ? AND country_id = ?',
-      [name, countryId]
-    );
-    return rows[0];
   }
 }
 

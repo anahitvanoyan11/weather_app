@@ -28,6 +28,14 @@ class City {
     return rows[0];
   }
 
+  static async findByNameAndCountry(name, countryId) {
+    const [rows] = await db.execute(
+      'SELECT * FROM cities WHERE name = ? AND country_id = ?',
+      [name, countryId]
+    );
+    return rows[0];
+  }
+
   static async findByCountry(countryId) {
     const [rows] = await db.execute(`
       SELECT c.*, co.name as country_name, co.code as country_code 
