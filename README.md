@@ -1,75 +1,54 @@
-# Weather App
+# Weather App API
 
-A weather application that tracks weather conditions for cities across different countries. The application consists of two main services: an API service and a Worker service.
+A weather application that provides weather data for cities across different countries. The application consists of two services: an API service and a Worker service.
 
-## Project Structure
+## Architecture
 
-```
-weather_app/
-├── api_service/          # API Service
-│   ├── config/          # Configuration files
-│   ├── controllers/     # Route controllers
-│   ├── models/         # Database models
-│   ├── routes/         # API routes
-│   ├── services/       # Business logic
-│   └── cron/           # Scheduled tasks
-└── worker_service/      # Worker Service
-    └── processors/     # Queue processors
-```
-
-## Features
-
-- Country and city management
-- Weather data tracking
-- Real-time weather updates
-- Historical weather data
-- Queue-based processing for weather updates
+- **API Service**: Handles HTTP requests and manages data
+- **Worker Service**: Processes weather data updates in the background using Redis queues
+- **Database**: MySQL for storing countries, cities, and weather data
+- **Queue**: Redis for managing background jobs
 
 ## Prerequisites
 
 - Node.js (v14 or higher)
 - MySQL
 - Redis
-- npm or yarn
 
-## Environment Variables
+## Environment Setup
 
-Create `.env` files in both `api_service` and `worker_service` directories based on the provided `example.env` files.
+### API Service (.env)
+```
+# Database Configuration
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_DATABASE=weather_app
+MYSQL_USER=root
+MYSQL_PASSWORD=your_password
 
-## Installation
+# Redis Configuration
+REDIS_HOST=localhost
+REDIS_PORT=6379
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/anahitvanoyan11/weather_app.git
-   cd weather_app
-   ```
+# Server Configuration
+PORT=3000
+```
 
-2. Install dependencies for both services:
-   ```bash
-   # Install API service dependencies
-   cd api_service
-   npm install
+### Worker Service (.env)
+```
+# Database Configuration
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=weather_app
 
-   # Install Worker service dependencies
-   cd ../worker_service
-   npm install
-   ```
+# Redis Configuration
+REDIS_HOST=localhost
+REDIS_PORT=6379
 
-3. Set up the database:
-   - Create a MySQL database
-   - Update the database configuration in `.env` files
-   - Run the database migrations (if any)
-
-4. Start Redis server:
-   ```bash
-   redis-server
-   ```
-
-5. Start the application:
-   ```bash
-   # From the root directory
-   ./start.sh
-   ```
+# Weather API Configuration
+WEATHER_API_URL=https://api.open-meteo.com/v1/forecast
+```
 
 ## API Endpoints
 
@@ -79,29 +58,84 @@ Create `.env` files in both `api_service` and `worker_service` directories based
 - `GET /countries/:id` - Get country by ID
 
 ### Cities
-- `GET /cities` - Get all cities
 - `POST /cities` - Create a new city
-- `GET /cities/:id` - Get city by ID
-- `GET /cities/country/:countryId` - Get cities by country
 
 ### Weather
-- `GET /weather/city/:cityId` - Get weather history for a city
-- `GET /weather/city/:cityId/current` - Get current weather for a city
+- `GET /weather/row` - Get weather history in row format
+- `GET /weather/average` - Get weather history with average values
 
-## Development
+## Running the Application
 
-- API Service runs on port 3000 by default
-- Worker Service processes weather update queues
-- Weather data is updated periodically via cron jobs
+1. Start Redis server
+2. Start MySQL server
+3. Start the API service:
+```bash
+cd api_service
+npm install
+npm start
+```
+4. Start the Worker service:
+```bash
+cd worker_service
+npm install
+npm start
+```
 
-## Contributing
+## Database Schema
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+### Countries Table
+```sql
+CREATE TABLE countries (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(100) NOT NULL,
+  code VARCHAR(2) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_country_code (code)
+);
+```
 
-## License
+### Cities Table
+```sql
+CREATE TABLE cities (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(100) NOT NULL,
+  country_id INT NOT NULL,
+  latitude DECIMAL(9,6),
+  longitude DECIMAL(9,6),
+  current_weather_id INT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (country_id) REFERENCES countries(id),
+  UNIQUE KEY unique_city_country (name, country_id)
+);
+```
 
-This project is licensed under the MIT License. 
+### Weather History Table
+```sql
+CREATE TABLE weather_history (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  city_id INT NOT NULL,
+  temperature DECIMAL(5,2) NOT NULL,
+  wind_speed DECIMAL(5,2) NOT NULL,
+  condition VARCHAR(50) NOT NULL,
+  fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (city_id) REFERENCES cities(id)
+);
+```
+
+## Error Handling
+
+All endpoints return appropriate HTTP status codes:
+- 200: Success
+- 201: Created
+- 400: Bad Request
+- 404: Not Found
+- 500: Internal Server Error
+
+Error responses follow this format:
+```json
+{
+  "error": "Error message description"
+}
+``` 
