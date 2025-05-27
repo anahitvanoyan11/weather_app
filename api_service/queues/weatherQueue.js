@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';    
-const weatherQueue = new Queue('weatherQueue', {
+const weatherQueue = new Queue('weather_queue', {
   connection: { host: 'localhost', port: 6379 },
 });
 
