@@ -1,24 +1,23 @@
 import db from '../config/database.js';
 
 class Weather {
-  static async create({ cityId, recorded_at, temperature, humidity, windspeed }) {
+  static async create({ cityId, temperature, humidity, windspeed }) {
     const [result] = await db.execute(
-      'INSERT INTO weather_history (city_id, recorded_at, temperature, humidity, windspeed) VALUES (?, ?, ?, ?, ?)',
-      [cityId, recorded_at, temperature, humidity, windspeed]
+      'INSERT INTO weather_history (city_id, temperature, humidity, windspeed) VALUES ( ?, ?, ?, ?)',
+      [cityId, temperature, humidity, windspeed]
     );
     return result.insertId;
   }
 
   static async findByCity(cityId, from, to) {
-    console.log({cityId, from, to});
     const [rows] = await db.execute(`
       SELECT w.*, c.name as city_name 
       FROM weather_history w 
       JOIN cities c ON w.city_id = c.id 
       WHERE w.city_id = ? 
-      AND w.recorded_at > ? 
-      AND w.recorded_at < ? 
-      ORDER BY w.recorded_at DESC
+      AND w.fetched_at > ? 
+      AND w.fetched_at < ? 
+      ORDER BY w.fetched_at DESC
     `, [cityId, from, to]);
     return rows;
   }
@@ -33,8 +32,8 @@ class Weather {
       FROM weather_history w
       JOIN cities c ON w.city_id = c.id
       WHERE w.city_id = ?
-        AND w.recorded_at > ?
-        AND w.recorded_at < ?
+        AND w.fetched_at > ?
+        AND w.fetched_at < ?
       GROUP BY c.name
     `, [cityId, from, to]);    
     return row; 

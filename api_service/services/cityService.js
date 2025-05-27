@@ -1,19 +1,26 @@
 import City from '../models/City.js';
-import Country from '../models/Country.js';
+import axios from 'axios';
 
 class CityService {
-  static async createCity(cityData) {
-    const existingCity = await City.findByNameAndCountry(cityData.name, cityData.countryId);
+  static async createCity(cityName) {
+    console.log('cityInfo => ', cityName);
+
+    const existingCity = await City.findByName(cityName);
     if (existingCity) {
-      throw new Error('City already exists in this country');
-    }
-    // Verify country exists
-    const country = await Country.findById(cityData.countryId);
-    if (!country) {
-      throw new Error('Country not found');
+      throw new Error('City already exists');
     }
 
-    return await City.create(cityData);
+    //try to gether city info
+    const cityInfo = await axios.get(
+      `https://nominatim.openstreetmap.org/search?q=${cityName}&format=json`
+    );
+    
+    return await City.create({
+      name: cityName,
+      city_name: cityInfo.data[0].name,
+      latitude: cityInfo.data[0].lat,
+      longitude: cityInfo.data[0].lon
+    });
   }
 
   static async getAllCities() {
@@ -26,15 +33,6 @@ class CityService {
       throw new Error('City not found');
     }
     return city;
-  }
-
-  static async getCitiesByCountry(countryId) {
-    // Verify country exists
-    const country = await Country.findById(countryId);
-    if (!country) {
-      throw new Error('Country not found');
-    }
-    return await City.findByCountry(countryId);
   }
 
   static async getWeatherHistory(cityId) {

@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
 import { Queue } from 'bullmq';
-import countryRoutes from './routes/countryRoutes.js';
 import cityRoutes from './routes/cityRoutes.js';
 import weatherRoutes from './routes/weatherRoutes.js';
 import './cron/weatherJob.js'; // your cron job
@@ -46,7 +45,6 @@ const testConnection = async () => {
 app.use(express.json());
 
 // Routes
-app.use('/countries', countryRoutes);
 app.use('/cities', cityRoutes);
 app.use('/weather', weatherRoutes);
 

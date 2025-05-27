@@ -2,24 +2,9 @@ import Weather from '../models/Weather.js';
 import City from '../models/City.js';
 
 class WeatherService {
-  static async createWeatherRecord(weatherData) {
-    // Verify city exists
-    const city = await City.findById(weatherData.cityId);
-    if (!city) {
-      throw new Error('City not found');
-    }
-
-    // Validate required fields
-    if (!weatherData.temperature || !weatherData.condition || !weatherData.windSpeed) {
-      throw new Error('Temperature, condition, and wind speed are required');
-    }
-
-    return await Weather.create(weatherData);
-  }
-
   static async getWeatherHistoryRow(query) {
-    // Verify city exists
-    const cityName = query.city ? query.city : 'Yerevan';
+    // Verify city exist
+    const cityName = query.city ? query.city.toLowerCase() : 'yerevan';
     const city = await City.findByName(cityName);
 
     if (!city) {
@@ -37,7 +22,7 @@ class WeatherService {
 
   static async getWeatherHistoryAverage(query) {
     // Verify city exists
-    const cityName = query.city ? query.city : 'Yerevan';
+    const cityName = query.city ? query.city.toLowerCase() : 'yerevan';
     const city = await City.findByName(cityName);
 
     if (!city) {

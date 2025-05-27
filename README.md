@@ -1,12 +1,12 @@
 # Weather App API
 
-A weather application that provides weather data for cities across different countries. The application consists of two services: an API service and a Worker service.
+A weather application that provides weather data for cities. The application consists of two services: an API service and a Worker service.
 
 ## Architecture
 
 - **API Service**: Handles HTTP requests and manages data
 - **Worker Service**: Processes weather data updates in the background using Redis queues
-- **Database**: MySQL for storing countries, cities, and weather data
+- **Database**: MySQL for storing cities and weather data
 - **Queue**: Redis for managing background jobs
 
 ## Prerequisites
@@ -16,6 +16,17 @@ A weather application that provides weather data for cities across different cou
 - Redis
 
 ## Environment Setup
+
+### Database Setup
+1. Create a new MySQL database:
+```sql
+CREATE DATABASE weather_app;
+```
+
+2. Initialize the database using the provided migration file:
+```bash
+mysql -u root -p weather_app < api_service/db/migrations/init.sql
+```
 
 ### API Service (.env)
 ```
@@ -50,92 +61,70 @@ REDIS_PORT=6379
 WEATHER_API_URL=https://api.open-meteo.com/v1/forecast
 ```
 
-## API Endpoints
-
-### Countries
-- `GET /countries` - Get all countries
-- `POST /countries` - Create a new country
-- `GET /countries/:id` - Get country by ID
-
-### Cities
-- `POST /cities` - Create a new city
-
-### Weather
-- `GET /weather/row` - Get weather history in row format
-- `GET /weather/average` - Get weather history with average values
-
-## Running the Application
+## Getting Started
 
 1. Start Redis server
 2. Start MySQL server
-3. Start the API service:
+3. Initialize the database using the steps in "Database Setup" above
+4. Start the API service:
 ```bash
 cd api_service
 npm install
 npm start
 ```
-4. Start the Worker service:
+5. Start the Worker service:
 ```bash
 cd worker_service
 npm install
 npm start
 ```
 
-## Database Schema
-
-### Countries Table
-```sql
-CREATE TABLE countries (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(100) NOT NULL,
-  code VARCHAR(2) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY unique_country_code (code)
-);
+6. Create your first city:
+```bash
+curl -X POST http://localhost:3000/cities \
+-H "Content-Type: application/json" \
+-d '{"name": "paris"}'
 ```
 
-### Cities Table
-```sql
-CREATE TABLE cities (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(100) NOT NULL,
-  country_id INT NOT NULL,
-  latitude DECIMAL(9,6),
-  longitude DECIMAL(9,6),
-  current_weather_id INT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (country_id) REFERENCES countries(id),
-  UNIQUE KEY unique_city_country (name, country_id)
-);
-```
+The system will:
+- Automatically fetch the city's coordinates
+- Get the current weather data
+- Start collecting weather history for this city
+- You can view the weather history after a few minutes
 
-### Weather History Table
-```sql
-CREATE TABLE weather_history (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  city_id INT NOT NULL,
-  temperature DECIMAL(5,2) NOT NULL,
-  wind_speed DECIMAL(5,2) NOT NULL,
-  condition VARCHAR(50) NOT NULL,
-  fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (city_id) REFERENCES cities(id)
-);
-```
+## API Endpoints
 
-## Error Handling
+### Cities
+- `POST /cities` - Create a new city
+  ```json
+  {
+    "name": "paris"  // Use Latin letters for best results
+  }
+  ```
+  Response:
+  ```json
+  {
+    "id": 1,
+    "name": "paris",
+    "city_name": "Paris",
+    "latitude": 48.8566,
+    "longitude": 2.3522
+  }
+  ```
 
-All endpoints return appropriate HTTP status codes:
-- 200: Success
-- 201: Created
-- 400: Bad Request
-- 404: Not Found
-- 500: Internal Server Error
-
-Error responses follow this format:
-```json
-{
-  "error": "Error message description"
-}
-``` 
+### Weather
+- `GET /weather/history/:cityId` - Get weather history for a specific city
+  Response:
+  ```json
+  [
+    {
+      "id": 1,
+      "city_id": 1,
+      "temperature": 20.5,
+      "humidity": 65.0,
+      "windspeed": 12.3,
+      "fetched_at": "2024-03-20T10:00:00Z",
+      "name": "paris",
+      "city_name": "Paris"
+    }
+  ]

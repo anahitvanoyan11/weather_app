@@ -4,14 +4,10 @@ import db from '../db/connection.js';
 import 'dotenv/config';
 
 const worker = new Worker('weather_queue', async (job) => {
-  console.log('Processing job:', job);
-
-  const [result] = await db.execute(`
-    SELECT c.*, co.name as country_name, co.code as country_code 
-    FROM cities c 
-    JOIN countries co ON c.country_id = co.id 
-    WHERE c.id = ?
-  `, [job.data.cityId]);
+  const [result] = await db.execute(
+    'SELECT * FROM cities WHERE id = ?',
+    [job.data.cityId]
+  );
 
   const city = result[0];
   try {
@@ -21,8 +17,14 @@ const worker = new Worker('weather_queue', async (job) => {
   
     //add weather_history
     const [weather_history] = await db.execute(
-      'INSERT INTO weather_history (city_id, recorded_at, temperature, humidity, windspeed) VALUES (?, ?, ?, ?, ?)',
-      [city.id, new Date(), weatherRes.data.current.temperature_2m, weatherRes.data.current.relative_humidity_2m, weatherRes.data.current.wind_speed_10m]
+      'INSERT INTO weather_history (city_id, temperature, humidity, windspeed, fetched_at) VALUES (?, ?, ?, ?, ?)',
+      [
+        city.id,
+        weatherRes.data.current.temperature_2m,
+        weatherRes.data.current.relative_humidity_2m,
+        weatherRes.data.current.wind_speed_10m,
+        new Date()
+      ]
     );
 
     await db.execute(
@@ -30,7 +32,7 @@ const worker = new Worker('weather_queue', async (job) => {
       [weather_history.insertId, city.id]
     );
   } catch (error) {
-    console.error('Error in weather Proccess job:', error.message);
+    console.error('Error in weather Process job:', error.message);
   }
 }, {
   connection: {
